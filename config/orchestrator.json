@@ -1,0 +1,22 @@
+{
+  "orchestrator": {
+    "version": "3.0.0",
+    "log_level": "info",
+    "max_concurrent_tasks": 10
+  },
+  "ai": {
+    "enabled": true,
+    "ollama_endpoint": "http://localhost:11434",
+    "default_models": [
+      "llama3:8b",
+      "codellama:latest",
+      "llama3:latest",
+      "llama3.2:latest"
+    ]
+  },
+  "network": {
+    "http_port": 8080,
+    "websocket_port": 8081,
+    "connection_timeout": 30
+  }
+}

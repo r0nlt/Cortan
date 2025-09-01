@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Cortan Orchestrator"
+abstract: "AI-Powered Multi-Model Orchestration Engine - A cutting-edge AI orchestration platform designed to seamlessly coordinate multiple AI models and services."
+authors:
+  - family-names: "Nuguru"
+    given-names: "Rishab"
+    affiliation: "Space Labs AI"
+repository-code: "https://github.com/r0nlt/Cortan"
+url: "https://github.com/r0nlt/Cortan"
+license: AGPL-3.0
+preferred-citation:
+  type: software
+  title: "Cortan Orchestrator: AI-Powered Multi-Model Orchestration Engine"
+  authors:
+    - family-names: "Nuguru"
+      given-names: "Rishab"
+      affiliation: "Space Labs AI"
+  repository-code: "https://github.com/r0nlt/Cortan"
+  year: 2025
+  license: AGPL-3.0
+  abstract: "Cortan Orchestrator is a prototype implementation of a modern AI orchestration platform built with C++20, featuring coroutine-based architecture, async I/O, and modular design for coordinating multiple AI models and services."
+keywords:
+  - "artificial-intelligence"
+  - "machine-learning"
+  - "orchestration"
+  - "c-plus-plus"
+  - "coroutines"
+  - "async-programming"
+  - "ai-models"
+  - "multi-model"
+  - "prototype"
+  - "research-software"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.xxxxxxx"
+  - type: url
+    value: "https://github.com/rishabnuguru/cortan-orchestrator/releases/tag/v3.0.0"
+license-url: "https://www.gnu.org/licenses/agpl-3.0"
+date-released: "2025-09-01"
