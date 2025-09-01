@@ -1118,144 +1118,9 @@ private:
 - ✅ **Error Resilience**: Isolated handler exceptions with comprehensive error handling
 - ✅ **Factory Patterns**: Convenient event creation helpers for all event types
 
-#### **Phase 2: Network Infrastructure (50% Complete)**
-- ✅ **HTTP Client**: Production-ready Boost.Beast HTTP/HTTPS client with SSL/TLS
-- ✅ **Async Network I/O**: Non-blocking HTTP operations with proper error handling
-- ✅ **Connection Management**: Proper SSL context and connection lifecycle
-- 🚧 **WebSocket Client**: Real-time event streaming (in progress)
-- 🚧 **Connection Pooling**: Efficient network resource management (pending)
 
-### 🚀 **Integration Examples with HTTP Client**
 
-#### **Real-time AI Model Communication**
 
-```cpp
-// Event-driven AI model interaction with HTTP client
-EventBus bus;
-HttpClient http_client;
-
-// Subscribe to AI processing events
-bus.subscribe("ai.processing", [&http_client](const BaseEvent& event) -> std::future<void> {
-    return std::async(std::launch::async, [&]() {
-        const auto& ai_event = static_cast<const AIProcessingEvent&>(event);
-
-        if (ai_event.getStage() == AIProcessingEvent::ProcessingStage::STARTED) {
-            // Make HTTP call to AI service
-            std::string api_url = "https://api.openai.com/v1/chat/completions";
-            std::string request_data = R"(
-                {
-                    "model": "gpt-3.5-turbo",
-                    "messages": [{"role": "user", "content": ")" + ai_event.getDetails() + R"("}],
-                    "max_tokens": 150
-                }
-            )";
-
-            // Async HTTP POST request
-            auto future = http_client.post(api_url, request_data);
-            auto [success, response] = future.get();
-
-            if (success) {
-                // Create completion event
-                auto complete_event = createTaskCompleted(
-                    ai_event.getTaskId(),
-                    "AI response: " + response.substr(0, 100) + "..."
-                );
-
-                bus.publish("ai.processing", complete_event).get();
-            } else {
-                std::cout << "AI API error: " << response << std::endl;
-            }
-        }
-    });
-});
-
-// Trigger AI processing
-auto start_event = createTaskStarted("user_query_123", "Explain quantum computing");
-bus.publish("ai.processing", start_event).get();
-```
-
-#### **Distributed Event Forwarding**
-
-```cpp
-// Forward events to remote services via HTTP
-class EventForwarder {
-private:
-    EventBus& bus_;
-    HttpClient http_client_;
-    std::string webhook_url_;
-
-public:
-    EventForwarder(EventBus& bus, const std::string& webhook_url)
-        : bus_(bus), webhook_url_(webhook_url) {
-
-        // Forward critical events to external monitoring
-        bus_.subscribePriority(EventPriority::CRITICAL,
-            [this](const BaseEvent& event) -> std::future<void> {
-                return std::async(std::launch::async, [this, &event]() {
-                    // Convert event to JSON
-                    std::string json_payload = R"(
-                        {
-                            "event_type": ")" + event.getEventType() + R"(",
-                            "priority": )" + std::to_string(static_cast<int>(event.getPriority())) + R"(,
-                            "timestamp": ")" + std::to_string(event.timestamp().time_since_epoch().count()) + R"(",
-                            "correlation_id": ")" + event.getCorrelationId() + R"("
-                        }
-                    )";
-
-                    // Send to webhook
-                    auto future = http_client_.post(webhook_url_, json_payload);
-                    auto [success, response] = future.get();
-
-                    if (!success) {
-                        std::cerr << "Failed to forward event: " << response << std::endl;
-                    }
-                });
-            });
-    }
-};
-
-// Usage
-EventForwarder forwarder(bus, "https://api.monitoring.example.com/events");
-```
-
-#### **Context-Aware External API Integration**
-
-```cpp
-// User context drives API behavior
-bus.subscribeWithContext("user.request",
-    [&http_client](const BaseEvent& event, const EventContext& context) -> std::future<void> {
-        return std::async(std::launch::async, [&]() {
-            const auto& user_request = static_cast<const UserRequestEvent&>(event);
-
-            // Personalized API calls based on user context
-            std::string api_url;
-            std::string request_data;
-
-            if (context.getFamiliarityLevel() > 0.8f) {
-                // Power user - use advanced API
-                api_url = "https://api.example.com/advanced/analyze";
-                request_data = R"({"query": ")" + user_request.getContent() + R"(", "detail_level": "comprehensive"})";
-            } else if (context.getFamiliarityLevel() > 0.5f) {
-                // Regular user - standard API
-                api_url = "https://api.example.com/analyze";
-                request_data = R"({"query": ")" + user_request.getContent() + R"(", "detail_level": "standard"})";
-            } else {
-                // New user - simplified API
-                api_url = "https://api.example.com/simple/analyze";
-                request_data = R"({"query": ")" + user_request.getContent() + R"(", "simplified": true})";
-            }
-
-            // Make personalized API call
-            auto future = http_client.post(api_url, request_data);
-            auto [success, response] = future.get();
-
-            if (success) {
-                std::cout << "Personalized response for " << context.getUserId() << ": "
-                         << response.substr(0, 100) << "..." << std::endl;
-            }
-        });
-    });
-```
 
 ### 📊 **Performance Benchmarks (Current Status)**
 
@@ -1266,12 +1131,7 @@ bus.subscribeWithContext("user.request",
 - **Memory Usage**: ~128 bytes per event baseline
 - **Thread Safety**: Mutex-protected concurrent access
 
-#### **HTTP Client Performance**
-- **Connection Time**: ~10-50ms for HTTPS handshake
-- **Request/Response**: ~50-200ms depending on endpoint
-- **Concurrent Requests**: Multiple simultaneous HTTP operations
-- **SSL/TLS**: Full certificate verification and encryption
-- **Error Handling**: Comprehensive network error recovery
+
 
 ### 🔄 **Next Development Phase**
 
@@ -1291,16 +1151,14 @@ bus.subscribeWithContext("user.request",
 
 #### **Current Capabilities**
 - ✅ **Core Event Processing**: Production-ready event bus
-- ✅ **HTTP Communication**: Full REST API integration
 - ✅ **Async Architecture**: Non-blocking I/O operations
 - ✅ **Error Handling**: Comprehensive fault tolerance
 - ✅ **Context Awareness**: Rich user and situational awareness
 
 #### **Ready for Production Use**
-- **Single-node applications** with HTTP API integration
+- **Single-node applications** with event-driven processing
 - **Real-time event processing** with async handlers
 - **Context-aware decision making** based on user profiles
-- **Network communication** with SSL/TLS security
 - **Error-resilient operations** with automatic recovery
 
 ### 📈 **Scaling to Research-Level Performance**
@@ -1310,11 +1168,10 @@ To achieve the **1.8M tasks/second** mentioned in Ray research:
 | Component | Current Status | Target | Next Steps |
 |-----------|----------------|---------|------------|
 | **Event Processing** | ✅ 10K/sec | 1.8M/sec | Distributed routing |
-| **Network I/O** | ✅ HTTP/HTTPS | WebSocket | Real-time streaming |
 | **Memory Management** | ✅ RAII/Smart pointers | Zero-copy | Shared memory optimization |
 | **Fault Tolerance** | ✅ Error isolation | Self-healing | Distributed consensus |
 | **Load Balancing** | ❌ Single-threaded | Multi-node | Cluster coordination |
 
 ---
 
-*This documentation covers the Cortan Event Bus architecture. For implementation details, see the source code in `include/cortan/core/event_system.hpp` and `src/core/event_system.cpp`. Last updated: October 2024*
+*This documentation covers the Cortan Event Bus architecture. For implementation details, see the source code in `include/cortan/core/event_system.hpp` and `src/core/event_system.cpp`. Networking capabilities are documented separately in `docs/Networking.md`. Last updated: September 1 2025*
