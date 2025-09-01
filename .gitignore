@@ -1,83 +1,283 @@
-# Build directories
+git # =============================================================================
+# Cortan Orchestrator - Comprehensive .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Build Directories and Artifacts
+# -----------------------------------------------------------------------------
 build/
 cmake/build/
 cmake-build-*/
+cmake-build-debug/
+cmake-build-release/
+out/
+bin/
+lib/
 
-# CMake generated files
+# -----------------------------------------------------------------------------
+# CMake Generated Files
+# -----------------------------------------------------------------------------
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
-_deps
+_deps/
+CMakeScripts/
+Makefile
+cmake-build-*/
 
+# CMake subproject build files
+*/CMakeCache.txt
+*/CMakeFiles/
+*/cmake_install.cmake
+*/Makefile
+
+# -----------------------------------------------------------------------------
+# Dependency Build Artifacts
+# -----------------------------------------------------------------------------
+# ASIO
+asio-*/
+# nlohmann_json
+json-*/
+# spdlog
+spdlog-*/
+# Google Test
+googletest-*/
+# Google Benchmark
+benchmark-*/
+
+# -----------------------------------------------------------------------------
+# Package Managers
+# -----------------------------------------------------------------------------
 # Conan
 .conan2/
 conan/
 conan_toolchain.cmake
 conan_deps.cmake
+conanbuildinfo.cmake
+conanbuildinfo.txt
+conaninfo.txt
+conan.lock
+graph_info.json
 
-# IDE files
+# vcpkg
+vcpkg/
+vcpkg_installed/
+
+# -----------------------------------------------------------------------------
+# IDE and Editor Files
+# -----------------------------------------------------------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-workspace
+*.sublime-project
+.vscode/
+.history/
+.ionide/
 
+# -----------------------------------------------------------------------------
+# OS Generated Files
+# -----------------------------------------------------------------------------
 # macOS
 .DS_Store
 .AppleDouble
 .LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
-# Logs
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# -----------------------------------------------------------------------------
+# Logs and Debug Files
+# -----------------------------------------------------------------------------
 *.log
 logs/
+*.debug
+*.dmp
+core
+core.*
+*.core
 
-# Temporary files
+# -----------------------------------------------------------------------------
+# Temporary and Cache Files
+# -----------------------------------------------------------------------------
 *.tmp
 *.temp
 .cache/
+*.bak
+*.backup
+*.orig
+*.rej
+*~
 
-# Executables
+# -----------------------------------------------------------------------------
+# Executables and Binaries
+# -----------------------------------------------------------------------------
 cortan
 cortan_tests
 cortan_benchmarks
 *.exe
 *.out
+*.app
+*.dylib
+*.so
+*.dll
+*.a
+*.lib
 
-# Coverage reports
+# -----------------------------------------------------------------------------
+# Testing and Coverage
+# -----------------------------------------------------------------------------
 coverage/
 *.gcda
 *.gcno
 *.gcov
+*.lcov
+coverage.info
+*.profraw
+*.profdata
 
-# Benchmark results
+# -----------------------------------------------------------------------------
+# Benchmark Results
+# -----------------------------------------------------------------------------
 benchmark_results.json
+benchmark_results.xml
+*.benchmark
 
-# Documentation build
+# -----------------------------------------------------------------------------
+# Documentation Build
+# -----------------------------------------------------------------------------
 docs/build/
 docs/_build/
+docs/.doctrees/
+*.doctree
 
-# Python (if any)
+# -----------------------------------------------------------------------------
+# Python (Development Tools)
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+.venv/
+env3/
+venv3/
+ENV3/
 
-# Node.js (if any)
+# -----------------------------------------------------------------------------
+# Node.js (Development Tools)
+# -----------------------------------------------------------------------------
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Configuration files (may contain sensitive data)
+# -----------------------------------------------------------------------------
+# Configuration Files (may contain sensitive data)
+# -----------------------------------------------------------------------------
 config/local.*
 config/*.local
 *.local.json
+config/secrets.*
+*.secrets.*
+.env
+.env.local
+.env.*.local
+
+# -----------------------------------------------------------------------------
+# CI/CD and Deployment
+# -----------------------------------------------------------------------------
+.github/workflows/*.log
+*.deploy
+deploy/
+
+# -----------------------------------------------------------------------------
+# Archives and Compressed Files
+# -----------------------------------------------------------------------------
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.tgz
+*.txz
+
+# -----------------------------------------------------------------------------
+# Specific to Cortan Project
+# -----------------------------------------------------------------------------
+# Model files (if any)
+models/
+*.model
+*.weights
+*.onnx
+
+# Data files
+data/
+*.csv
+*.jsonl
+*.parquet
+
+# -----------------------------------------------------------------------------
+# Custom Project Patterns
+# -----------------------------------------------------------------------------
+# Add any project-specific patterns here
