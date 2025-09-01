@@ -192,14 +192,16 @@ public:
     std::future<void> publishProactive(std::string suggestion, EventContext context, EventPriority priority) {
         context.is_proactive_suggestion = true;
 
-        auto proactive_event = BaseEvent::create(
+        // Create event with metadata to avoid const_cast
+        std::unordered_map<std::string, std::string> metadata;
+        metadata["suggestion"] = suggestion;
+
+        auto proactive_event = BaseEvent::createWithMetadata(
             "cortana.suggestion",
             priority,
-            std::move(context)
+            std::move(context),
+            metadata
         );
-
-        // Add the suggestion to event metadata
-        const_cast<EventContext&>(proactive_event->getContext()).metadata["suggestion"] = suggestion;
 
         return publish("cortana.suggestion", proactive_event);
     }
@@ -223,9 +225,16 @@ public:
             std::move(emergency_context)
         );
 
-        // Publish synchronously for emergency
+        // Publish synchronously for emergency with timeout to prevent blocking
         auto future = publish("cortana.emergency", emergency_event);
-        future.get(); // Wait for completion
+
+        // Wait for completion with a 5-second timeout
+        auto status = future.wait_for(std::chrono::seconds(5));
+        if (status == std::future_status::timeout) {
+            std::cout << "⚠️  Emergency event publishing timed out after 5 seconds\n";
+        } else if (status == std::future_status::ready) {
+            future.get(); // Retrieve the result if ready
+        }
     }
 
     void updateUserContext(const std::string& user_id, const EventContext& context) {
@@ -570,7 +579,7 @@ std::shared_ptr<UserProfile> createNewUser(const std::string& user_id,
     profile->last_seen = now;
     profile->first_interaction = now;
     profile->familiarity_level = 0.1f; // New users start with low familiarity
-    profile->interaction_count = 1;
+    profile->interaction_count = 0; // Start at 0, increment only after first actual interaction
 
     // Default preferences
     profile->preferences.preferred_greeting_style = "casual";

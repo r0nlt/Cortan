@@ -331,31 +331,35 @@ if(BUILD_TESTS)
     add_executable(cortan_tests
         # Core tests
         tests/core/test_event_system.cpp
-        tests/core/test_workflow_engine.cpp
-        tests/core/test_resource_manager.cpp
-        tests/core/test_thread_pool.cpp
-        tests/core/test_memory_pool.cpp
+        # TODO: Create missing test files
+        # tests/core/test_workflow_engine.cpp
+        # tests/core/test_resource_manager.cpp
+        # tests/core/test_thread_pool.cpp
+        # tests/core/test_memory_pool.cpp
 
         # Network tests
-        tests/network/test_http_client.cpp
-        tests/network/test_connection_pool.cpp
+        # TODO: Create missing test files
+        # tests/network/test_http_client.cpp
+        # tests/network/test_connection_pool.cpp
 
         # Terminal tests
-        tests/terminal/test_command_processor.cpp
-        tests/terminal/test_interactive_shell.cpp
+        # TODO: Create missing test files
+        # tests/terminal/test_command_processor.cpp
+        # tests/terminal/test_interactive_shell.cpp
 
         # Main test runner
         tests/main.cpp
     )
 
     if(ENABLE_AI_FEATURES)
-        target_sources(cortan_tests PRIVATE
-            tests/ai/test_model_manager.cpp
-            tests/ai/test_ollama_client.cpp
-            tests/ai/test_conversation_manager.cpp
-            tests/ai/test_task_dispatcher.cpp
-            tests/ai/test_security_manager.cpp
-        )
+        # TODO: Create missing AI test files
+        # target_sources(cortan_tests PRIVATE
+        #     tests/ai/test_model_manager.cpp
+        #     tests/ai/test_ollama_client.cpp
+        #     tests/ai/test_conversation_manager.cpp
+        #     tests/ai/test_task_dispatcher.cpp
+        #     tests/ai/test_security_manager.cpp
+        # )
     endif()
 
     target_link_libraries(cortan_tests

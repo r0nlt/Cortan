@@ -185,6 +185,22 @@ public:
         return std::make_shared<BaseEventFactory>(std::move(event_type), priority, std::move(context));
     }
 
+    // Overloaded create method that accepts initial metadata to avoid const_cast
+    static std::shared_ptr<BaseEvent> createWithMetadata(std::string event_type,
+                                                        EventPriority priority,
+                                                        EventContext context,
+                                                        const std::unordered_map<std::string, std::string>& metadata) {
+        // Set metadata before creating the event
+        EventContext context_with_metadata = std::move(context);
+        context_with_metadata.metadata.insert(metadata.begin(), metadata.end());
+
+        struct BaseEventFactory : public BaseEvent {
+            BaseEventFactory(std::string type, EventPriority pri, EventContext ctx)
+                : BaseEvent(std::move(type), pri, std::move(ctx)) {}
+        };
+        return std::make_shared<BaseEventFactory>(std::move(event_type), priority, std::move(context_with_metadata));
+    }
+
 protected:
     BaseEvent(std::string event_type,
               EventPriority priority = EventPriority::NORMAL,

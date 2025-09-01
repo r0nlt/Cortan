@@ -282,19 +282,37 @@ int main(int argc, char* argv[]) {
     // Interactive Menu and Demonstration
     // ============================================================================
 
-    std::cout << "\n🎬 What would you like to do today?\n";
-    std::cout << "1. 🧪 Run the Event System Demonstration\n";
-    std::cout << "2. 🔧 Quick System Test\n";
-    std::cout << "3. 📊 Show System Status\n";
-    std::cout << "4. ❌ Exit\n";
-    std::cout << "\n🤔 Your choice (1-4): ";
-
     std::string choice;
-    std::getline(std::cin, choice);
+    int numeric_choice = 0;
+    bool valid_choice = false;
 
-    if (choice == "1") {
+    do {
+        std::cout << "\n🎬 What would you like to do today?\n";
+        std::cout << "1. 🧪 Run the Event System Demonstration\n";
+        std::cout << "2. 🔧 Quick System Test\n";
+        std::cout << "3. 📊 Show System Status\n";
+        std::cout << "4. ❌ Exit\n";
+        std::cout << "\n🤔 Your choice (1-4): ";
+
+        std::getline(std::cin, choice);
+
+        try {
+            numeric_choice = std::stoi(choice);
+            if (numeric_choice >= 1 && numeric_choice <= 4) {
+                valid_choice = true;
+            } else {
+                std::cout << "⚠️  Invalid choice. Please enter a number between 1 and 4.\n";
+            }
+        } catch (const std::invalid_argument&) {
+            std::cout << "⚠️  Invalid input. Please enter a number between 1 and 4.\n";
+        } catch (const std::out_of_range&) {
+            std::cout << "⚠️  Number out of range. Please enter a number between 1 and 4.\n";
+        }
+    } while (!valid_choice);
+
+    if (numeric_choice == 1) {
         std::cout << "\n🎬 Starting Cortana Event System Demonstration...\n\n";
-    } else if (choice == "2") {
+    } else if (numeric_choice == 2) {
         std::cout << "\n🔧 Running quick system test...\n";
 
         // Quick test of the event system
@@ -310,7 +328,7 @@ int main(int argc, char* argv[]) {
 
         std::cout << "🎉 System test completed successfully!\n";
         return 0;
-    } else if (choice == "3") {
+    } else if (numeric_choice == 3) {
         std::cout << "\n📊 System Status:\n";
         std::cout << "✅ EventBus: Operational\n";
         std::cout << "✅ User Profile: " << (user_profile ? user_profile->display_name : "Unknown") << "\n";
@@ -330,11 +348,9 @@ int main(int argc, char* argv[]) {
 
         std::cout << "\n🚀 System ready for operation!\n";
         return 0;
-    } else if (choice == "4" || choice.empty()) {
+    } else if (numeric_choice == 4) {
         std::cout << "\n👋 Goodbye! Have a great day!\n";
         return 0;
-    } else {
-        std::cout << "\n🤔 I didn't understand that choice. Let's proceed with the demonstration...\n\n";
     }
 
     // 1. User Interactions
