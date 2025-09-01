@@ -12,15 +12,155 @@
 
 using namespace cortan::core;
 using namespace cortana_events;
+using namespace user_factory;
+
+std::string generateCortanaWelcome(const std::string& user_id, const EventContext& context) {
+    std::string welcome;
+
+    // Get current time for time-based greetings
+    auto now = std::chrono::system_clock::now();
+    auto time_t_value = std::chrono::system_clock::to_time_t(now);
+    auto local_time = *std::localtime(&time_t_value);
+    int hour = local_time.tm_hour;
+
+    // Determine time of day
+    std::string time_greeting;
+    if (hour < 12) time_greeting = "morning";
+    else if (hour < 17) time_greeting = "afternoon";
+    else if (hour < 21) time_greeting = "evening";
+    else time_greeting = "night";
+
+    // Get user profile information dynamically
+    auto familiarity = context.getFamiliarityLevel();
+    auto greeting_style = context.getPreferredGreetingStyle();
+    auto display_name = context.user_profile ? context.user_profile->display_name : user_id;
+
+    // Base welcome with dynamic user personalization
+    if (user_id == "rishab") {
+        // Rishab's personalized welcomes based on familiarity and time
+        if (familiarity > 0.8f) {
+            if (time_greeting == "morning") {
+                welcome = "🌅 Good morning, Rishab! Ready to tackle some code today? I've been analyzing your recent projects and have some insights ready.";
+            } else if (time_greeting == "afternoon") {
+                welcome = "☀️ Good afternoon, Rishab! How's your coding session going? I noticed you were working on that event system - want me to run some tests?";
+            } else if (time_greeting == "evening") {
+                welcome = "🌙 Good evening, Rishab! Perfect time for some deep coding work. I've been learning from our recent sessions and have some optimizations ready.";
+            } else {
+                welcome = "🌃 Late night coding session, Rishab? I'm here to help! Remember, great code is written at 2 AM, but great debugging happens the next morning.";
+            }
+        } else if (familiarity > 0.5f) {
+            welcome = "👋 Hello Rishab! Welcome back to our development environment. I've been keeping track of your progress - shall we continue where we left off?";
+        } else {
+            welcome = "🤖 Cortana online. Hello Rishab, I'm your AI development assistant. Ready to begin our coding session?";
+        }
+    } else if (user_id == "friend") {
+        welcome = "👋 Hello there, friend! I'm Cortana, your AI companion. I'm here to help with whatever you need - from coding assistance to general questions. What can I help you with today?";
+    } else if (user_id == "guest" || user_id == "default") {
+        welcome = "🤖 Cortana online. Welcome to the Cortana Orchestrator development environment. I'm here to assist with your AI development needs.";
+    } else {
+        // Personalized welcome for named users based on their profile
+        if (familiarity > 0.7f) {
+            welcome = "🌟 Welcome back, " + display_name + "! Great to see you again. I've been keeping track of our previous interactions. Ready to continue our work?";
+        } else if (familiarity > 0.4f) {
+            welcome = "👋 Hello " + display_name + "! I recognize you've worked with me before. Welcome to the development environment. What would you like to work on today?";
+        } else {
+            welcome = "🤖 Cortana online. Hello " + display_name + "! Welcome to the Cortana Orchestrator. I'm your AI development assistant. I'm excited to work with you!";
+        }
+
+        // Add greeting style consideration
+        if (greeting_style == "technical") {
+            welcome += " I've prepared some technical insights for our session.";
+        } else if (greeting_style == "formal") {
+            welcome += " I trust you'll find our interaction productive.";
+        } else if (greeting_style == "friendly") {
+            welcome += " I'm really glad you're here!";
+        }
+    }
+
+    // Add emotional state consideration
+    if (context.emotional_state == "tired" || context.emotional_state == "exhausted") {
+        welcome += "\n💤 I sense you might be tired. Would you like me to suggest taking a break or help with some simpler tasks?";
+    } else if (context.emotional_state == "frustrated") {
+        welcome += "\n😌 I understand coding can be challenging sometimes. I'm here to help debug or provide fresh perspectives on your problems.";
+    } else if (context.emotional_state == "excited") {
+        welcome += "\n🎯 I love your enthusiasm! Let's channel that energy into building something amazing today!";
+    }
+
+    // Add mission context if available
+    if (context.related_mission) {
+        welcome += "\n🎯 Mission Context: " + *context.related_mission;
+        welcome += "\nLet's work together to achieve our objectives!";
+    }
+
+    return welcome;
+}
 
 int main(int argc, char* argv[]) {
+    // Interactive user identification
     std::cout << "🤖 CORTANA ORCHESTRATOR v0.0.1 🤖\n";
     std::cout << "For a green future, one algorithm at a time.\n\n";
 
+    std::string current_user;
+
+    // Check for command line user specification first
     if (argc > 1) {
-        std::string command = argv[1];
-        std::cout << "Initializing with command: " << command << "\n\n";
+        std::string arg = argv[1];
+        if (arg == "--user" && argc > 2) {
+            current_user = argv[2];
+        } else if (arg.find("--user=") == 0) {
+            current_user = arg.substr(7);  // Remove "--user="
+        }
     }
+
+    // If no user specified via command line, ask interactively
+    if (current_user.empty()) {
+        std::cout << "👋 Hello! I'm Cortana, your AI development assistant.\n";
+        std::cout << "🤔 Who am I speaking with today? ";
+        std::getline(std::cin, current_user);
+
+        // Handle empty input
+        if (current_user.empty()) {
+            current_user = "friend";
+            std::cout << "👤 I'll call you 'friend' for now. You can always tell me your name later!\n";
+        } else {
+            // Clean up the input (trim whitespace)
+            current_user.erase(current_user.begin(),
+                              std::find_if(current_user.begin(), current_user.end(),
+                                          [](unsigned char ch) { return !std::isspace(ch); }));
+            current_user.erase(std::find_if(current_user.rbegin(), current_user.rend(),
+                                          [](unsigned char ch) { return !std::isspace(ch); }).base(),
+                              current_user.end());
+        }
+        std::cout << "\n";
+    }
+
+    // Initialize UserManager and create/get user profile
+    UserManager user_manager;
+
+    // Create or get user profile dynamically
+    std::shared_ptr<UserProfile> user_profile;
+    if (current_user == "rishab") {
+        // Special handling for Rishab - create developer profile
+        user_profile = createDeveloperUser("rishab", "Rishab");
+        user_profile->familiarity_level = 0.9f; // High familiarity
+        user_profile->updateRelationshipStatus();
+    } else if (current_user == "friend") {
+        user_profile = createDefaultUser("friend");
+    } else {
+        // For other users, try to get existing profile or create new one
+        user_profile = user_manager.getOrCreateUserProfile(current_user);
+    }
+
+    // Create dynamic event context using the user profile
+    EventContext user_context;
+    user_context.user_profile = user_profile;
+    user_context.location_context = "workspace";
+    user_context.emotional_state = user_profile->preferred_emotional_state;
+    user_context.urgency_level = 0.5f;
+
+    // Generate personalized welcome using the dynamic user profile
+    std::string welcome_message = generateCortanaWelcome(current_user, user_context);
+    std::cout << welcome_message << "\n\n";
 
     // ============================================================================
     // Cortana-Style Event System Demonstration
@@ -33,7 +173,6 @@ int main(int argc, char* argv[]) {
     global_ctx.location_context = "mission_control";
     global_ctx.emotional_state = "focused";
     global_ctx.urgency_level = 0.5f;
-    global_ctx.familiarity_level = 0.9f;  // High familiarity with Rishab
 
     cortana_bus.setGlobalContext(global_ctx);
 
@@ -140,10 +279,63 @@ int main(int argc, char* argv[]) {
     });
 
     // ============================================================================
-    // Cortana's Demonstration Sequence
+    // Interactive Menu and Demonstration
     // ============================================================================
 
-    std::cout << "🎬 Starting Cortana Event System Demonstration...\n\n";
+    std::cout << "\n🎬 What would you like to do today?\n";
+    std::cout << "1. 🧪 Run the Event System Demonstration\n";
+    std::cout << "2. 🔧 Quick System Test\n";
+    std::cout << "3. 📊 Show System Status\n";
+    std::cout << "4. ❌ Exit\n";
+    std::cout << "\n🤔 Your choice (1-4): ";
+
+    std::string choice;
+    std::getline(std::cin, choice);
+
+    if (choice == "1") {
+        std::cout << "\n🎬 Starting Cortana Event System Demonstration...\n\n";
+    } else if (choice == "2") {
+        std::cout << "\n🔧 Running quick system test...\n";
+
+        // Quick test of the event system
+        EventBus test_bus;
+        test_bus.subscribe("test.ping", [](const BaseEvent& event) -> std::future<void> {
+            return std::async(std::launch::async, []() {
+                std::cout << "✅ Event system is working correctly!\n";
+            });
+        });
+
+        auto test_event = BaseEvent::create("test.ping", EventPriority::NORMAL);
+        test_bus.publish("test.ping", test_event).get();
+
+        std::cout << "🎉 System test completed successfully!\n";
+        return 0;
+    } else if (choice == "3") {
+        std::cout << "\n📊 System Status:\n";
+        std::cout << "✅ EventBus: Operational\n";
+        std::cout << "✅ User Profile: " << (user_profile ? user_profile->display_name : "Unknown") << "\n";
+        std::cout << "✅ User ID: " << (user_profile ? user_profile->user_id : "Unknown") << "\n";
+        std::cout << "✅ Relationship: " << (user_profile ? user_profile->relationship_status : "Unknown") << "\n";
+        std::cout << "✅ Familiarity Level: " << (user_profile ? std::to_string(int(user_profile->familiarity_level * 100)) + "%" : "Unknown") << "\n";
+        std::cout << "✅ Interaction Count: " << (user_profile ? user_profile->interaction_count : 0) << "\n";
+        std::cout << "✅ Greeting Style: " << (user_profile ? user_profile->preferences.preferred_greeting_style : "Unknown") << "\n";
+        std::cout << "✅ Location Context: " << user_context.location_context << "\n";
+        std::cout << "✅ Emotional State: " << user_context.emotional_state << "\n";
+
+        // Show active users if any
+        auto active_users = user_manager.getActiveUsers();
+        if (!active_users.empty()) {
+            std::cout << "👥 Active Users: " << active_users.size() << "\n";
+        }
+
+        std::cout << "\n🚀 System ready for operation!\n";
+        return 0;
+    } else if (choice == "4" || choice.empty()) {
+        std::cout << "\n👋 Goodbye! Have a great day!\n";
+        return 0;
+    } else {
+        std::cout << "\n🤔 I didn't understand that choice. Let's proceed with the demonstration...\n\n";
+    }
 
     // 1. User Interactions
     std::cout << "1️⃣ Testing User Interactions:\n";
@@ -195,9 +387,8 @@ int main(int argc, char* argv[]) {
     std::cout << "\n5️⃣ Testing Proactive Suggestions:\n";
 
     EventContext suggestion_ctx;
-    suggestion_ctx.user_id = "rishab";
+    suggestion_ctx.user_profile = user_profile;  // Use the existing user profile
     suggestion_ctx.emotional_state = "observant";
-    suggestion_ctx.familiarity_level = 0.9f;
 
     cortana_bus.publishProactive(
         "Based on your coding patterns, you might want to run the tests before pushing to main branch",

@@ -53,6 +53,13 @@ LearningEvent::LearningEvent(LearningType type, std::string insight,
     , insight_(std::move(insight))
     , confidence_level_(confidence_level) {}
 
+WelcomeEvent::WelcomeEvent(WelcomeType type, std::string message,
+                          std::string user_id, EventContext context)
+    : BaseEvent("user.welcome", EventPriority::NORMAL, std::move(context))
+    , type_(type)
+    , message_(std::move(message))
+    , target_user_id_(std::move(user_id)) {}
+
 // ============================================================================
 // Enhanced EventBus Implementation
 // ============================================================================
@@ -301,7 +308,7 @@ namespace cortana_events {
 
 std::shared_ptr<UserRequestEvent> createUserCommand(const std::string& command, const std::string& user_id) {
     EventContext context;
-    context.user_id = user_id;
+    context.user_profile = user_factory::createNewUser(user_id);
     context.emotional_state = "focused";
     context.urgency_level = 0.6f;
 
@@ -310,7 +317,7 @@ std::shared_ptr<UserRequestEvent> createUserCommand(const std::string& command, 
 
 std::shared_ptr<UserRequestEvent> createUserQuestion(const std::string& question, const std::string& user_id) {
     EventContext context;
-    context.user_id = user_id;
+    context.user_profile = user_factory::createNewUser(user_id);
     context.emotional_state = "curious";
     context.urgency_level = 0.4f;
 
@@ -319,7 +326,7 @@ std::shared_ptr<UserRequestEvent> createUserQuestion(const std::string& question
 
 std::shared_ptr<UserRequestEvent> createCasualConversation(const std::string& message, const std::string& user_id) {
     EventContext context;
-    context.user_id = user_id;
+    context.user_profile = user_factory::createNewUser(user_id);
     context.emotional_state = "casual";
     context.urgency_level = 0.2f;
 
@@ -328,6 +335,7 @@ std::shared_ptr<UserRequestEvent> createCasualConversation(const std::string& me
 
 std::shared_ptr<AIProcessingEvent> createTaskStarted(const std::string& task_id, const std::string& description) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("cortana_system");
     context.emotional_state = "focused";
     context.urgency_level = 0.5f;
 
@@ -336,6 +344,7 @@ std::shared_ptr<AIProcessingEvent> createTaskStarted(const std::string& task_id,
 
 std::shared_ptr<AIProcessingEvent> createTaskProgress(const std::string& task_id, const std::string& progress_info) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("cortana_system");
     context.emotional_state = "working";
     context.urgency_level = 0.3f;
 
@@ -344,6 +353,7 @@ std::shared_ptr<AIProcessingEvent> createTaskProgress(const std::string& task_id
 
 std::shared_ptr<AIProcessingEvent> createTaskCompleted(const std::string& task_id, const std::string& result) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("cortana_system");
     context.emotional_state = "accomplished";
     context.urgency_level = 0.4f;
 
@@ -352,7 +362,7 @@ std::shared_ptr<AIProcessingEvent> createTaskCompleted(const std::string& task_i
 
 std::shared_ptr<EnvironmentalEvent> createUserStateChange(const std::string& new_state, const std::string& user_id) {
     EventContext context;
-    context.user_id = user_id;
+    context.user_profile = user_factory::createNewUser(user_id);
     context.emotional_state = "observant";
     context.urgency_level = 0.3f;
 
@@ -369,6 +379,7 @@ std::shared_ptr<EnvironmentalEvent> createUserStateChange(const std::string& new
 
 std::shared_ptr<EnvironmentalEvent> createSystemAlert(const std::string& alert_message, EventPriority priority) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("system_monitor");
     context.emotional_state = "alert";
     context.urgency_level = (priority == EventPriority::CRITICAL) ? 1.0f : 0.7f;
 
@@ -382,6 +393,7 @@ std::shared_ptr<EnvironmentalEvent> createSystemAlert(const std::string& alert_m
 
 std::shared_ptr<LearningEvent> createUserPreference(const std::string& preference, float confidence) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("learning_system");
     context.emotional_state = "learning";
     context.urgency_level = 0.2f;
 
@@ -395,6 +407,7 @@ std::shared_ptr<LearningEvent> createUserPreference(const std::string& preferenc
 
 std::shared_ptr<LearningEvent> createBehaviorPattern(const std::string& pattern, float confidence) {
     EventContext context;
+    context.user_profile = user_factory::createDefaultUser("learning_system");
     context.emotional_state = "analytical";
     context.urgency_level = 0.2f;
 
@@ -406,6 +419,239 @@ std::shared_ptr<LearningEvent> createBehaviorPattern(const std::string& pattern,
     );
 }
 
+std::shared_ptr<WelcomeEvent> createSystemWelcome(const std::string& user_id, const std::string& message) {
+    EventContext context;
+    context.user_profile = user_factory::createNewUser(user_id);
+    context.emotional_state = "welcoming";
+    context.urgency_level = 0.1f;
+
+    return std::make_shared<WelcomeEvent>(
+        WelcomeEvent::WelcomeType::SYSTEM_STARTUP,
+        message,
+        user_id,
+        context
+    );
+}
+
+std::shared_ptr<WelcomeEvent> createPersonalizedWelcome(const std::string& user_id, const EventContext& context) {
+    // Simple welcome message generation for the event system
+    std::string welcome_message = "Welcome, " + user_id + "! The Cortana Orchestrator is ready to assist you.";
+
+    return std::make_shared<WelcomeEvent>(
+        WelcomeEvent::WelcomeType::USER_LOGIN,
+        welcome_message,
+        user_id,
+        context
+    );
+}
+
 } // namespace cortana_events
+
+// ============================================================================
+// User Manager Implementation
+// ============================================================================
+
+class UserManager::Impl {
+public:
+    std::unordered_map<std::string, std::shared_ptr<UserProfile>> user_profiles_;
+    std::mutex mutex_;
+};
+
+UserManager::UserManager() : impl_(std::make_unique<Impl>()) {}
+UserManager::~UserManager() = default;
+
+std::shared_ptr<UserProfile> UserManager::getOrCreateUserProfile(const std::string& user_id) {
+    std::lock_guard<std::mutex> lock(impl_->mutex_);
+
+    auto it = impl_->user_profiles_.find(user_id);
+    if (it != impl_->user_profiles_.end()) {
+        // Update last seen time
+        it->second->last_seen = std::chrono::system_clock::now();
+        return it->second;
+    }
+
+    // Create new user profile
+    auto new_profile = user_factory::createNewUser(user_id);
+    impl_->user_profiles_[user_id] = new_profile;
+    return new_profile;
+}
+
+std::shared_ptr<UserProfile> UserManager::getUserProfile(const std::string& user_id) const {
+    std::lock_guard<std::mutex> lock(impl_->mutex_);
+
+    auto it = impl_->user_profiles_.find(user_id);
+    return (it != impl_->user_profiles_.end()) ? it->second : nullptr;
+}
+
+bool UserManager::saveUserProfile(const std::shared_ptr<UserProfile>& profile) {
+    // TODO: Implement JSON serialization and file saving
+    std::cout << "📝 Saving user profile for: " << profile->user_id << std::endl;
+    return true; // Placeholder
+}
+
+bool UserManager::deleteUserProfile(const std::string& user_id) {
+    std::lock_guard<std::mutex> lock(impl_->mutex_);
+
+    auto it = impl_->user_profiles_.find(user_id);
+    if (it != impl_->user_profiles_.end()) {
+        impl_->user_profiles_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+void UserManager::updateUserFamiliarity(const std::string& user_id, float interaction_quality) {
+    auto profile = getUserProfile(user_id);
+    if (profile) {
+        profile->updateFamiliarity(interaction_quality);
+    }
+}
+
+void UserManager::updateUserPreferences(const std::string& user_id, const UserPreferences& preferences) {
+    auto profile = getUserProfile(user_id);
+    if (profile) {
+        profile->preferences = preferences;
+    }
+}
+
+std::vector<std::string> UserManager::getAllUserIds() const {
+    std::lock_guard<std::mutex> lock(impl_->mutex_);
+
+    std::vector<std::string> user_ids;
+    user_ids.reserve(impl_->user_profiles_.size());
+
+    for (const auto& pair : impl_->user_profiles_) {
+        user_ids.push_back(pair.first);
+    }
+    return user_ids;
+}
+
+std::vector<std::shared_ptr<UserProfile>> UserManager::getActiveUsers() const {
+    std::lock_guard<std::mutex> lock(impl_->mutex_);
+
+    std::vector<std::shared_ptr<UserProfile>> active_users;
+    auto now = std::chrono::system_clock::now();
+    auto one_week_ago = now - std::chrono::hours(24 * 7);
+
+    for (const auto& pair : impl_->user_profiles_) {
+        if (pair.second->last_seen > one_week_ago) {
+            active_users.push_back(pair.second);
+        }
+    }
+    return active_users;
+}
+
+bool UserManager::loadUserProfiles(const std::string& config_path) {
+    // TODO: Implement JSON loading
+    std::cout << "📂 Loading user profiles from: " << config_path << std::endl;
+    return true; // Placeholder
+}
+
+bool UserManager::saveUserProfiles(const std::string& config_path) {
+    // TODO: Implement JSON saving
+    std::cout << "💾 Saving user profiles to: " << config_path << std::endl;
+    return true; // Placeholder
+}
+
+// ============================================================================
+// User Factory Implementations
+// ============================================================================
+
+namespace user_factory {
+
+std::shared_ptr<UserProfile> createNewUser(const std::string& user_id,
+                                         const std::string& display_name) {
+    auto profile = std::make_shared<UserProfile>();
+    auto now = std::chrono::system_clock::now();
+
+    profile->user_id = user_id;
+    profile->display_name = display_name.empty() ? user_id : display_name;
+    profile->created_at = now;
+    profile->last_seen = now;
+    profile->first_interaction = now;
+    profile->familiarity_level = 0.1f; // New users start with low familiarity
+    profile->interaction_count = 1;
+
+    // Default preferences
+    profile->preferences.preferred_greeting_style = "casual";
+    profile->preferences.time_format = "12h";
+    profile->preferences.response_detail_level = "detailed";
+    profile->preferred_emotional_state = "focused";
+    profile->relationship_status = "acquaintance";
+
+    return profile;
+}
+
+std::shared_ptr<UserProfile> createKnownUser(const std::string& user_id,
+                                           const std::string& display_name,
+                                           float familiarity_level,
+                                           const UserPreferences& preferences) {
+    auto profile = createNewUser(user_id, display_name);
+    profile->familiarity_level = familiarity_level;
+    profile->preferences = preferences;
+    profile->updateRelationshipStatus();
+
+    return profile;
+}
+
+std::shared_ptr<UserProfile> createDefaultUser(const std::string& user_id) {
+    return createNewUser(user_id, "Guest User");
+}
+
+std::shared_ptr<UserProfile> createDeveloperUser(const std::string& user_id,
+                                               const std::string& display_name) {
+    auto profile = createNewUser(user_id, display_name);
+
+    // Developer-specific preferences
+    profile->preferences.preferred_greeting_style = "technical";
+    profile->preferences.response_detail_level = "comprehensive";
+    profile->interests = {"programming", "software engineering", "debugging", "optimization"};
+    profile->topic_familiarity = {
+        {"coding", 0.8f},
+        {"algorithms", 0.7f},
+        {"debugging", 0.9f},
+        {"testing", 0.8f}
+    };
+
+    return profile;
+}
+
+std::shared_ptr<UserProfile> createResearcherUser(const std::string& user_id,
+                                                const std::string& display_name) {
+    auto profile = createNewUser(user_id, display_name);
+
+    // Researcher-specific preferences
+    profile->preferences.preferred_greeting_style = "formal";
+    profile->preferences.response_detail_level = "comprehensive";
+    profile->interests = {"research", "analysis", "data science", "innovation"};
+    profile->topic_familiarity = {
+        {"research", 0.9f},
+        {"data_analysis", 0.8f},
+        {"methodology", 0.8f},
+        {"innovation", 0.7f}
+    };
+
+    return profile;
+}
+
+std::shared_ptr<UserProfile> createStudentUser(const std::string& user_id,
+                                             const std::string& display_name) {
+    auto profile = createNewUser(user_id, display_name);
+
+    // Student-specific preferences
+    profile->preferences.preferred_greeting_style = "friendly";
+    profile->preferences.response_detail_level = "detailed";
+    profile->interests = {"learning", "education", "projects", "collaboration"};
+    profile->topic_familiarity = {
+        {"learning", 0.8f},
+        {"projects", 0.7f},
+        {"education", 0.7f},
+        {"collaboration", 0.6f}
+    };
+
+    return profile;
+}
+
+} // namespace user_factory
 
 } // namespace cortan::core

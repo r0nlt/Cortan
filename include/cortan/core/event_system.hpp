@@ -25,21 +25,102 @@ enum class EventPriority {
 };
 
 // ============================================================================
+// User Profile (Dynamic User Management)
+// ============================================================================
+
+struct UserPreferences {
+    std::string preferred_greeting_style;  // "formal", "casual", "technical", "friendly"
+    std::string time_format;              // "12h", "24h"
+    std::string response_detail_level;     // "brief", "detailed", "comprehensive"
+    std::unordered_map<std::string, std::string> custom_settings;
+};
+
+struct UserProfile {
+    std::string user_id;
+    std::string display_name;
+    std::string email;
+    std::chrono::system_clock::time_point created_at;
+    std::chrono::system_clock::time_point last_seen;
+
+    // Dynamic familiarity and interaction tracking
+    float familiarity_level = 0.0f;        // 0.0 = new user, 1.0 = best friend
+    int interaction_count = 0;
+    std::chrono::system_clock::time_point first_interaction;
+
+    // Personality and preferences
+    UserPreferences preferences;
+    std::string preferred_emotional_state;  // User's typical mood when interacting
+    std::vector<std::string> interests;     // Topics the user is interested in
+    std::unordered_map<std::string, int> interaction_patterns; // Tracks user behavior
+
+    // Cortana's relationship with user
+    std::string relationship_status;        // "acquaintance", "colleague", "friend", "confidant"
+    std::vector<std::string> shared_memories; // Important interactions to remember
+    std::unordered_map<std::string, float> topic_familiarity; // How familiar user is with topics
+
+    // Methods for dynamic updates
+    void updateFamiliarity(float interaction_quality = 1.0f) {
+        // Gradual familiarity increase based on interactions
+        float familiarity_boost = interaction_quality * 0.1f;
+        familiarity_level = std::min(1.0f, familiarity_level + familiarity_boost);
+        interaction_count++;
+        last_seen = std::chrono::system_clock::now();
+
+        // Update relationship status based on familiarity
+        updateRelationshipStatus();
+    }
+
+    void updateRelationshipStatus() {
+        if (familiarity_level >= 0.8f) {
+            relationship_status = "confidant";
+        } else if (familiarity_level >= 0.6f) {
+            relationship_status = "friend";
+        } else if (familiarity_level >= 0.3f) {
+            relationship_status = "colleague";
+        } else {
+            relationship_status = "acquaintance";
+        }
+    }
+
+    std::string getPersonalizedGreeting() const {
+        if (familiarity_level > 0.8f) {
+            return "old_friend";
+        } else if (familiarity_level > 0.5f) {
+            return "regular_user";
+        } else {
+            return "new_user";
+        }
+    }
+};
+
+// ============================================================================
 // Event Context (Cortana's Situational Awareness)
 // ============================================================================
 
 struct EventContext {
-    std::string user_id;
+    std::shared_ptr<UserProfile> user_profile;  // Dynamic user information
     std::string session_id;
     std::string location_context;  // "mission_control", "field_ops", "personal_time"
     std::string emotional_state;   // "focused", "concerned", "playful", "exhausted"
     std::unordered_map<std::string, std::string> metadata;
 
-    // Cortana's personality traits
+    // Cortana's personality traits (now context-aware)
     float urgency_level = 0.5f;        // 0.0 = casual, 1.0 = emergency
-    float familiarity_level = 0.3f;    // How well Cortana knows the user
     bool is_proactive_suggestion = false;
     std::optional<std::string> related_mission;
+
+    // Convenience accessors
+    std::string getUserId() const {
+        return user_profile ? user_profile->user_id : "unknown";
+    }
+
+    float getFamiliarityLevel() const {
+        return user_profile ? user_profile->familiarity_level : 0.0f;
+    }
+
+    std::string getPreferredGreetingStyle() const {
+        return user_profile ? user_profile->preferences.preferred_greeting_style : "casual";
+    }
 };
 
 // ============================================================================
@@ -74,15 +155,21 @@ public:
     }
 
     virtual std::string getCortanaResponseStyle() const {
-        // Based on context, determine how Cortana should respond
+        // Based on context and user profile, determine how Cortana should respond
+        auto familiarity = context_.getFamiliarityLevel();
+        auto greeting_style = context_.getPreferredGreetingStyle();
+
         if (context_.emotional_state == "playful" && context_.urgency_level < 0.3f) {
             return "witty";
         }
         if (priority_ == EventPriority::CRITICAL) {
             return "urgent";
         }
-        if (context_.familiarity_level > 0.7f) {
-            return "personal";
+        if (familiarity > 0.7f) {
+            return greeting_style == "formal" ? "personal_formal" : "personal";
+        }
+        if (greeting_style == "technical") {
+            return "technical";
         }
         return "professional";
     }
@@ -192,6 +279,26 @@ private:
     float confidence_level_;
 };
 
+// Welcome and User Experience Events
+class WelcomeEvent : public BaseEvent {
+public:
+    enum class WelcomeType { SYSTEM_STARTUP, USER_LOGIN, SESSION_RESUME, CONTEXT_CHANGE };
+
+    WelcomeEvent(WelcomeType type,
+                 std::string message,
+                 std::string user_id,
+                 EventContext context = {});
+
+    WelcomeType getWelcomeType() const { return type_; }
+    const std::string& getMessage() const { return message_; }
+    const std::string& getTargetUserId() const { return target_user_id_; }
+
+private:
+    WelcomeType type_;
+    std::string message_;
+    std::string target_user_id_;
+};
+
 // ============================================================================
 // Enhanced EventBus (Cortana's Intelligence Core)
 // ============================================================================
@@ -238,6 +345,66 @@ private:
 };
 
 // ============================================================================
+// User Manager (Dynamic User Profile Management)
+// ============================================================================
+
+class UserManager {
+public:
+    UserManager();
+    ~UserManager();
+
+    // User profile management
+    std::shared_ptr<UserProfile> getOrCreateUserProfile(const std::string& user_id);
+    std::shared_ptr<UserProfile> getUserProfile(const std::string& user_id) const;
+    bool saveUserProfile(const std::shared_ptr<UserProfile>& profile);
+    bool deleteUserProfile(const std::string& user_id);
+
+    // User preference updates
+    void updateUserFamiliarity(const std::string& user_id, float interaction_quality = 1.0f);
+    void updateUserPreferences(const std::string& user_id, const UserPreferences& preferences);
+
+    // Profile queries
+    std::vector<std::string> getAllUserIds() const;
+    std::vector<std::shared_ptr<UserProfile>> getActiveUsers() const;
+
+    // Persistence
+    bool loadUserProfiles(const std::string& config_path = "config/users.json");
+    bool saveUserProfiles(const std::string& config_path = "config/users.json");
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+// ============================================================================
+// User Factory Functions (Create Dynamic User Profiles)
+// ============================================================================
+
+namespace user_factory {
+
+std::shared_ptr<UserProfile> createNewUser(const std::string& user_id,
+                                         const std::string& display_name = "");
+
+std::shared_ptr<UserProfile> createKnownUser(const std::string& user_id,
+                                           const std::string& display_name,
+                                           float familiarity_level,
+                                           const UserPreferences& preferences);
+
+std::shared_ptr<UserProfile> createDefaultUser(const std::string& user_id = "guest");
+
+// Specialized user templates
+std::shared_ptr<UserProfile> createDeveloperUser(const std::string& user_id,
+                                               const std::string& display_name);
+
+std::shared_ptr<UserProfile> createResearcherUser(const std::string& user_id,
+                                                const std::string& display_name);
+
+std::shared_ptr<UserProfile> createStudentUser(const std::string& user_id,
+                                             const std::string& display_name);
+
+} // namespace user_factory
+
+// ============================================================================
 // Cortana-Specific Event Factory Functions
 // ============================================================================
 
@@ -276,6 +443,13 @@ std::shared_ptr<LearningEvent> createUserPreference(const std::string& preferenc
 
 std::shared_ptr<LearningEvent> createBehaviorPattern(const std::string& pattern,
                                                     float confidence = 0.7f);
+
+// Welcome helpers
+std::shared_ptr<WelcomeEvent> createSystemWelcome(const std::string& user_id,
+                                                 const std::string& message);
+
+std::shared_ptr<WelcomeEvent> createPersonalizedWelcome(const std::string& user_id,
+                                                       const EventContext& context);
 
 } // namespace cortana_events
 
