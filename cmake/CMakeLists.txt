@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20)
 # Project Setup
 # ===============================
 project(CortanOrchestrator
-    VERSION 3.0.0
+    VERSION 0.0.1
     DESCRIPTION "AI Orchestrational Engine with Multi-Model Coordination"
     LANGUAGES CXX
 )

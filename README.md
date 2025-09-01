@@ -221,7 +221,7 @@ cd cortan
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
 ```
-Copyright (C) 2025 Space Labs AI
+usCopyright (C) 2025 Space Labs AI
 Copyright (C) 2025 Rishab Nuguru
 
 This program is free software: you can redistribute it and/or modify
@@ -278,12 +278,12 @@ A `CITATION.cff` file is included in the repository root for easy citation impor
 
 **Space Labs AI**
 - **Author**: Rishab Nuguru
-- **Email**: [contact information]
+- **Email**: [spacelabsai@gmail.com]
 - **Website**: [company website]
 
 ## 🔄 Version History
 
-### v3.0.0 (2025)
+### v0.0.1 (2025)
 - Initial prototype release
 - Multi-model orchestration framework
 - C++20 coroutine support

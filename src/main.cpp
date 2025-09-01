@@ -6,7 +6,7 @@
 #endif
 
 int main(int argc, char* argv[]) {
-    std::cout << "🚀 Cortan Orchestrator v3.0.0\n";
+    std::cout << "🚀 Cortan Orchestrator v0.0.1\n";
     std::cout << "AI Orchestrational Engine Starting...\n";
 
     if (argc > 1) {

@@ -3,7 +3,7 @@ from conan.tools.cmake import CMakeToolchain, CMakeDeps, cmake_layout
 
 class CortanOrchestratorConan(ConanFile):
     name = "cortan-orchestrator"
-    version = "3.0.0"
+    version = "0.0.1"
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
