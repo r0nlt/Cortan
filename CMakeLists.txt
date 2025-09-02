@@ -162,6 +162,9 @@ if(BUILD_BENCHMARKS)
             GIT_TAG v1.8.3
             GIT_SHALLOW TRUE
         )
+        # Disable Google Benchmark's internal Google Test build to avoid CMake compatibility issues
+        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+        set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
         FetchContent_MakeAvailable(googlebenchmark)
     endif()
 endif()
