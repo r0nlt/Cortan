@@ -211,15 +211,15 @@ private:
                                          const std::string& host,
                                          const std::string& data = "") {
         http::request<BodyType> req{method == "POST" ? http::verb::post : http::verb::get, target, 11};
-        req.set(http::field::host, host);
-        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-        req.set(http::field::accept, "*/*");
+                req.set(http::field::host, host);
+                req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+                req.set(http::field::accept, "*/*");
 
-        if (method == "POST" && !data.empty()) {
-            req.set(http::field::content_type, "application/json");
-            req.body() = data;
-            req.prepare_payload();
-        }
+                if (method == "POST" && !data.empty()) {
+                    req.set(http::field::content_type, "application/json");
+                    req.body() = data;
+                    req.prepare_payload();
+                }
 
         return req;
     }
@@ -268,19 +268,19 @@ private:
 
             // Send the HTTP request
             auto req = build_request<http::string_body>(method, target, host, data);
-            http::write(stream, req);
+                http::write(stream, req);
 
-            // Receive the HTTP response
-            beast::flat_buffer buffer;
-            http::response<http::dynamic_body> res;
-            http::read(stream, buffer, res);
+                // Receive the HTTP response
+                beast::flat_buffer buffer;
+                http::response<http::dynamic_body> res;
+                http::read(stream, buffer, res);
 
             // Cancel the deadline timer since we completed successfully
             deadline_timer.cancel();
 
-            // Close the connection
-            beast::error_code ec;
-            stream.shutdown(ec);
+                // Close the connection
+                beast::error_code ec;
+                stream.shutdown(ec);
 
             if (ec) {
                 std::cerr << "SSL shutdown error: " << ec.message() << std::endl;
@@ -305,28 +305,28 @@ private:
             // Create socket
             tcp::socket socket{ioc};
 
-            // Look up the domain name
+                // Look up the domain name
             tcp::resolver resolver{ioc};
-            auto const results = resolver.resolve(host, port);
+                auto const results = resolver.resolve(host, port);
 
             // Make the connection
-            net::connect(socket, results.begin(), results.end());
+                net::connect(socket, results.begin(), results.end());
 
             // Send the HTTP request
             auto req = build_request<http::string_body>(method, target, host, data);
-            http::write(socket, req);
+                http::write(socket, req);
 
-            // Receive the HTTP response
-            beast::flat_buffer buffer;
-            http::response<http::dynamic_body> res;
-            http::read(socket, buffer, res);
+                // Receive the HTTP response
+                beast::flat_buffer buffer;
+                http::response<http::dynamic_body> res;
+                http::read(socket, buffer, res);
 
             // Cancel the deadline timer since we completed successfully
             deadline_timer.cancel();
 
-            // Close the connection
-            beast::error_code ec;
-            socket.shutdown(tcp::socket::shutdown_both, ec);
+                // Close the connection
+                beast::error_code ec;
+                socket.shutdown(tcp::socket::shutdown_both, ec);
 
             return handle_response(res);
 
